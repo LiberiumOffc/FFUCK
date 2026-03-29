@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import discord
+from discord.ext import commands
 import asyncio
 import json
 import os
@@ -8,17 +9,11 @@ import time
 import random
 
 # === ANSI ЦВЕТА ===
-RED = "\033[91m"          # КРАСНЫЙ для арта
-BLUE_SHADES = [
-    "\033[94m",  # ярко-синий
-    "\033[96m",  # циан
-    "\033[34m",  # синий
-    "\033[36m",  # бирюзовый
-    "\033[94m",  # снова ярко-синий
-]
+RED = "\033[91m"
+BLUE_SHADES = ["\033[94m", "\033[96m", "\033[34m", "\033[36m", "\033[94m"]
 RESET = "\033[0m"
 
-# === КРАСНЫЙ ЭПИЧНЫЙ АРТ В НАЧАЛЕ ===
+# === КРАСНЫЙ ЭПИЧНЫЙ АРТ ===
 RED_ART = f"""
 {RED}______________¶¶¶{RESET}
 {RED}_____________¶¶_¶¶¶¶{RESET}
@@ -54,19 +49,14 @@ RED_ART = f"""
 """
 
 def slow_print(text, delay=0.03, use_blue=True):
-    """Анимация печатающего текста (синий или обычный)"""
     for char in text:
-        if use_blue:
-            color = random.choice(BLUE_SHADES)
-        else:
-            color = RED
+        color = random.choice(BLUE_SHADES) if use_blue else RED
         sys.stdout.write(f"{color}{char}{RESET}")
         sys.stdout.flush()
         time.sleep(delay)
     print()
 
 def rainbow_line(length=50):
-    """Переливающаяся синяя линия"""
     for i in range(length):
         color = BLUE_SHADES[i % len(BLUE_SHADES)]
         sys.stdout.write(f"{color}═{RESET}")
@@ -75,130 +65,213 @@ def rainbow_line(length=50):
     print()
 
 def animated_menu():
-    """Меню с анимацией"""
     rainbow_line(50)
     slow_print("   FUERT CRASH SERVER (ВАШ СЕРВЕР)", 0.02)
     rainbow_line(50)
     slow_print("1. Краш канала (массовое создание)", 0.02)
     slow_print("2. Переименовать ВСЕ каналы", 0.02)
     slow_print("3. Разослать приглашение во все каналы", 0.02)
-    slow_print("4. Ввести данные заново", 0.02)
+    slow_print("4. Ввести данные (токен и ID сервера)", 0.02)
+    slow_print("5. Изменить названия / ссылку", 0.02)
     slow_print("0. Выход", 0.02)
     rainbow_line(50)
 
 # === КОНФИГ ===
 CONFIG_FILE = "fuert_config.json"
 
-default_config = {
-    "token": "ВАШ_ТОКЕН_БОТА",
-    "guild_id": "ID_ВАШЕГО_СЕРВЕРА",
-    "channel_name": "FUERT FUCK",
-    "spam_name": "fuck-off-niga-by-DADILK",
-    "tg_link": "https://t.me/ZET_Clumsy"
-}
-
 def load_config():
     if not os.path.exists(CONFIG_FILE):
+        default = {
+            "token": "",
+            "guild_id": "",
+            "channel_name": "FUERT FUCK",
+            "spam_name": "fuck-off-niga-by-DADILK",
+            "tg_link": "https://t.me/ZET_Clumsy"
+        }
         with open(CONFIG_FILE, "w") as f:
-            json.dump(default_config, f, indent=4)
-        slow_print("⚙️ Создан config.json. ВСТАВЬТЕ ТОКЕН И ID СЕРВЕРА!", 0.03)
-        sys.exit(1)
+            json.dump(default, f, indent=4)
+        return default
     with open(CONFIG_FILE, "r") as f:
         return json.load(f)
 
-config = load_config()
-TOKEN = config["token"]
-GUILD_ID = int(config["guild_id"])
-CHANNEL_NAME = config["channel_name"]
-SPAM_NAME = config["spam_name"]
-TG_LINK = config["tg_link"]
-
-def input_data():
-    global CHANNEL_NAME, SPAM_NAME, TG_LINK
-    slow_print("\n--- ВВОД ДАННЫХ (ПЕРЕЛИВАЮЩИЙСЯ СИНИЙ) ---", 0.02)
-    CHANNEL_NAME = input(f"{BLUE_SHADES[0]}Название канала (FUERT FUCK): {RESET}") or "FUERT FUCK"
-    SPAM_NAME = input(f"{BLUE_SHADES[1]}Имя для спам-каналов (fuck-off): {RESET}") or "fuck-off"
-    TG_LINK = input(f"{BLUE_SHADES[2]}Telegram ссылка: {RESET}") or "https://t.me/ZET_Clumsy"
-    save_config()
-    slow_print("✅ Данные сохранены!", 0.03)
-
-def save_config():
-    config["channel_name"] = CHANNEL_NAME
-    config["spam_name"] = SPAM_NAME
-    config["tg_link"] = TG_LINK
+def save_config(config):
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=4)
 
-async def crash_channel(guild):
-    slow_print("🚨 СОЗДАЮ КАНАЛЫ...", 0.03)
-    for i in range(50):
-        try:
-            await guild.create_text_channel(f"{SPAM_NAME}-{i}")
-            slow_print(f"✅ Создан #{SPAM_NAME}-{i}", 0.01)
-            await asyncio.sleep(0.5)
-        except:
-            slow_print("❌ Ошибка/лимит", 0.03)
-    slow_print("✔️ Готово!", 0.03)
+def input_bot_data():
+    slow_print("\n--- ВВОД ТОКЕНА И ID СЕРВЕРА ---", 0.02)
+    token = input(f"{BLUE_SHADES[0]}Токен бота: {RESET}")
+    guild_id = input(f"{BLUE_SHADES[1]}ID сервера: {RESET}")
+    return token, guild_id
 
-async def rename_all(guild):
-    slow_print("🏷️ ПЕРЕИМЕНОВЫВАЮ КАНАЛЫ...", 0.03)
-    for channel in guild.channels:
-        try:
-            await channel.edit(name=CHANNEL_NAME[:100])
-            slow_print(f"✅ {channel.name} → {CHANNEL_NAME}", 0.01)
-            await asyncio.sleep(0.5)
-        except:
-            pass
+def input_custom_data():
+    global channel_name, spam_name, tg_link
+    slow_print("\n--- ИЗМЕНЕНИЕ НАЗВАНИЙ И ССЫЛКИ ---", 0.02)
+    channel_name = input(f"{BLUE_SHADES[0]}Название канала (FUERT FUCK): {RESET}") or "FUERT FUCK"
+    spam_name = input(f"{BLUE_SHADES[1]}Имя спам-каналов (fuck-off): {RESET}") or "fuck-off-niga-by-DADILK"
+    tg_link = input(f"{BLUE_SHADES[2]}Telegram ссылка: {RESET}") or "https://t.me/ZET_Clumsy"
+    config = load_config()
+    config["channel_name"] = channel_name
+    config["spam_name"] = spam_name
+    config["tg_link"] = tg_link
+    save_config(config)
+    slow_print("✅ Данные сохранены!", 0.03)
 
-async def send_invite_all(guild):
-    slow_print("📨 РАССЫЛАЮ ПРИГЛАШЕНИЯ...", 0.03)
-    for channel in guild.text_channels:
-        try:
-            await channel.send(f"🔥 ПРИСОЕДИНЯЙСЯ: {TG_LINK}")
-            slow_print(f"✅ Отправлено в #{channel.name}", 0.01)
-            await asyncio.sleep(0.3)
-        except:
-            pass
-
-class FuertBot(commands.Bot):
-    async def setup_hook(self):
-        slow_print(f"✅ Бот зашёл как {self.user}", 0.02)
-
-bot = FuertBot(command_prefix="!", intents=discord.Intents.all())
-
-@bot.event
-async def on_ready():
-    # ПОКАЗЫВАЕМ КРАСНЫЙ АРТ ПРИ СТАРТЕ
+# === ОСНОВНАЯ ФУНКЦИЯ ===
+async def main():
     print(RED_ART)
-    slow_print("\n🔥 FUERT CRASH АКТИВИРОВАН 🔥", 0.02, use_blue=False)
+    slow_print("🔥 FUERT CRASH ДЛЯ ВАШЕГО СЕРВЕРА 🔥", 0.02, use_blue=False)
     
-    slow_print(f"\n✅ Бот готов! Сервер: {bot.get_guild(GUILD_ID).name if bot.get_guild(GUILD_ID) else 'не найден'}", 0.02)
-    guild = bot.get_guild(GUILD_ID)
-    if not guild:
-        slow_print("❌ Сервер не найден! Проверьте ID в config.json", 0.03)
-        await bot.close()
-        return
-
+    config = load_config()
+    
+    token = config["token"]
+    guild_id = config["guild_id"]
+    channel_name = config["channel_name"]
+    spam_name = config["spam_name"]
+    tg_link = config["tg_link"]
+    
+    bot = None
+    guild = None
+    
     while True:
         animated_menu()
         choice = input(f"{BLUE_SHADES[3]}Выбор: {RESET}")
+        
         if choice == "1":
-            await crash_channel(guild)
+            if not token or not guild_id:
+                slow_print("❌ Сначала введите токен и ID сервера (пункт 4)", 0.03)
+                continue
+            if bot is None or not bot.is_ready():
+                slow_print("⏳ Подключаю бота...", 0.02)
+                bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+                
+                @bot.event
+                async def on_ready():
+                    nonlocal guild
+                    guild = bot.get_guild(int(guild_id))
+                    slow_print(f"✅ Бот {bot.user} подключён!", 0.02)
+                
+                try:
+                    await bot.start(token)
+                except Exception as e:
+                    slow_print(f"❌ Ошибка: {e}", 0.03)
+                    bot = None
+                    continue
+            
+            if guild is None:
+                guild = bot.get_guild(int(guild_id))
+                if guild is None:
+                    slow_print("❌ Сервер не найден! Проверьте ID", 0.03)
+                    continue
+            
+            slow_print("🚨 СОЗДАЮ КАНАЛЫ...", 0.03)
+            for i in range(50):
+                try:
+                    await guild.create_text_channel(f"{spam_name}-{i}")
+                    slow_print(f"✅ Создан #{spam_name}-{i}", 0.01)
+                    await asyncio.sleep(0.5)
+                except:
+                    slow_print("❌ Ошибка/лимит", 0.03)
+            slow_print("✔️ Готово!", 0.03)
+        
         elif choice == "2":
-            await rename_all(guild)
+            if not token or not guild_id:
+                slow_print("❌ Сначала введите токен и ID сервера (пункт 4)", 0.03)
+                continue
+            if bot is None or not bot.is_ready():
+                slow_print("⏳ Подключаю бота...", 0.02)
+                bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+                
+                @bot.event
+                async def on_ready():
+                    nonlocal guild
+                    guild = bot.get_guild(int(guild_id))
+                    slow_print(f"✅ Бот {bot.user} подключён!", 0.02)
+                
+                try:
+                    await bot.start(token)
+                except Exception as e:
+                    slow_print(f"❌ Ошибка: {e}", 0.03)
+                    bot = None
+                    continue
+            
+            if guild is None:
+                guild = bot.get_guild(int(guild_id))
+                if guild is None:
+                    slow_print("❌ Сервер не найден! Проверьте ID", 0.03)
+                    continue
+            
+            slow_print("🏷️ ПЕРЕИМЕНОВЫВАЮ КАНАЛЫ...", 0.03)
+            for channel in guild.channels:
+                try:
+                    await channel.edit(name=channel_name[:100])
+                    slow_print(f"✅ {channel.name} → {channel_name}", 0.01)
+                    await asyncio.sleep(0.5)
+                except:
+                    pass
+        
         elif choice == "3":
-            await send_invite_all(guild)
+            if not token or not guild_id:
+                slow_print("❌ Сначала введите токен и ID сервера (пункт 4)", 0.03)
+                continue
+            if bot is None or not bot.is_ready():
+                slow_print("⏳ Подключаю бота...", 0.02)
+                bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+                
+                @bot.event
+                async def on_ready():
+                    nonlocal guild
+                    guild = bot.get_guild(int(guild_id))
+                    slow_print(f"✅ Бот {bot.user} подключён!", 0.02)
+                
+                try:
+                    await bot.start(token)
+                except Exception as e:
+                    slow_print(f"❌ Ошибка: {e}", 0.03)
+                    bot = None
+                    continue
+            
+            if guild is None:
+                guild = bot.get_guild(int(guild_id))
+                if guild is None:
+                    slow_print("❌ Сервер не найден! Проверьте ID", 0.03)
+                    continue
+            
+            slow_print("📨 РАССЫЛАЮ ПРИГЛАШЕНИЯ...", 0.03)
+            for channel in guild.text_channels:
+                try:
+                    await channel.send(f"🔥 ПРИСОЕДИНЯЙСЯ: {tg_link}")
+                    slow_print(f"✅ Отправлено в #{channel.name}", 0.01)
+                    await asyncio.sleep(0.3)
+                except:
+                    pass
+        
         elif choice == "4":
-            input_data()
+            token, guild_id = input_bot_data()
+            config = load_config()
+            config["token"] = token
+            config["guild_id"] = guild_id
+            save_config(config)
+            if bot is not None:
+                await bot.close()
+                bot = None
+                guild = None
+            slow_print("✅ Данные сохранены! Используйте пункты 1-3", 0.03)
+        
+        elif choice == "5":
+            input_custom_data()
+            channel_name = load_config()["channel_name"]
+            spam_name = load_config()["spam_name"]
+            tg_link = load_config()["tg_link"]
+        
         elif choice == "0":
             slow_print("Выход...", 0.03)
-            await bot.close()
+            if bot is not None:
+                await bot.close()
             return
+        
         else:
             slow_print("Неверный ввод", 0.03)
 
 if __name__ == "__main__":
-    if TOKEN == "ВАШ_ТОКЕН_БОТА" or GUILD_ID == "ID_ВАШЕГО_СЕРВЕРА":
-        slow_print("❌ Заполните token и guild_id в fuert_config.json!", 0.03)
-    else:
-        bot.run(TOKEN)
+    asyncio.run(main())
