@@ -7,7 +7,8 @@ import sys
 import time
 import random
 
-# === ANSI ЦВЕТА (переливающийся синий) ===
+# === ANSI ЦВЕТА ===
+RED = "\033[91m"          # КРАСНЫЙ для арта
 BLUE_SHADES = [
     "\033[94m",  # ярко-синий
     "\033[96m",  # циан
@@ -15,21 +16,57 @@ BLUE_SHADES = [
     "\033[36m",  # бирюзовый
     "\033[94m",  # снова ярко-синий
 ]
-
 RESET = "\033[0m"
 
-def slow_print(text, delay=0.03):
-    """Анимация печатающего текста"""
+# === КРАСНЫЙ ЭПИЧНЫЙ АРТ В НАЧАЛЕ ===
+RED_ART = f"""
+{RED}______________¶¶¶{RESET}
+{RED}_____________¶¶_¶¶¶¶{RESET}
+{RED}____________¶¶____¶¶¶{RESET}
+{RED}___________¶¶¶______¶¶{RESET}
+{RED}___________¶¶¶_______¶¶{RESET}
+{RED}__________¶¶¶¶________¶¶{RESET}
+{RED}__________¶_¶¶_________¶¶{RESET}
+{RED}__________¶__¶¶_________¶¶____¶¶{RESET}
+{RED}__________¶__¶¶__________¶¶¶¶¶¶¶{RESET}
+{RED}_________¶¶__¶¶¶______¶¶¶¶¶¶___¶{RESET}
+{RED}_________¶¶___¶¶__¶¶¶¶¶¶__¶¶{RESET}
+{RED}_______¶¶_¶____¶¶¶¶________¶¶{RESET}
+{RED}______¶¶__¶¶___¶¶__________¶¶{RESET}
+{RED}_____¶¶____¶¶___¶¶__________¶¶{RESET}
+{RED}___¶¶_______¶¶___¶¶_________¶¶{RESET}
+{RED}___¶¶¶¶¶¶¶¶¶¶¶¶¶__¶¶_________¶{RESET}
+{RED}_¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶_¶¶________¶¶{RESET}
+{RED}¶¶__¶¶¶¶¶¶____¶¶¶¶¶¶¶¶¶______¶¶{RESET}
+{RED}¶¶¶¶¶___¶______¶___¶¶¶¶¶_____¶¶{RESET}
+{RED}________¶¶¶¶¶¶¶¶______¶¶¶¶¶_¶¶{RESET}
+{RED}______¶¶¶¶¶¶¶¶¶¶¶________¶¶¶¶{RESET}
+{RED}______¶¶¶¶¶¶¶¶¶¶¶¶{RESET}
+{RED}______¶__¶¶_¶¶¶¶¶¶{RESET}
+{RED}_____¶¶______¶___¶{RESET}
+{RED}_____¶¶_____¶¶___¶{RESET}
+{RED}_____¶______¶¶___¶{RESET}
+{RED}____¶¶______¶¶___¶¶{RESET}
+{RED}____¶¶______¶¶___¶¶{RESET}
+{RED}___¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶{RESET}
+{RED}__¶¶¶¶¶¶¶¶¶_¶¶¶¶¶¶¶¶{RESET}
+{RED}__¶¶________¶¶¶___{RESET}
+"""
+
+def slow_print(text, delay=0.03, use_blue=True):
+    """Анимация печатающего текста (синий или обычный)"""
     for char in text:
-        # Меняем оттенок синего для каждого символа
-        color = random.choice(BLUE_SHADES)
+        if use_blue:
+            color = random.choice(BLUE_SHADES)
+        else:
+            color = RED
         sys.stdout.write(f"{color}{char}{RESET}")
         sys.stdout.flush()
         time.sleep(delay)
     print()
 
 def rainbow_line(length=50):
-    """Переливающаяся линия"""
+    """Переливающаяся синяя линия"""
     for i in range(length):
         color = BLUE_SHADES[i % len(BLUE_SHADES)]
         sys.stdout.write(f"{color}═{RESET}")
@@ -131,6 +168,10 @@ bot = FuertBot(command_prefix="!", intents=discord.Intents.all())
 
 @bot.event
 async def on_ready():
+    # ПОКАЗЫВАЕМ КРАСНЫЙ АРТ ПРИ СТАРТЕ
+    print(RED_ART)
+    slow_print("\n🔥 FUERT CRASH АКТИВИРОВАН 🔥", 0.02, use_blue=False)
+    
     slow_print(f"\n✅ Бот готов! Сервер: {bot.get_guild(GUILD_ID).name if bot.get_guild(GUILD_ID) else 'не найден'}", 0.02)
     guild = bot.get_guild(GUILD_ID)
     if not guild:
